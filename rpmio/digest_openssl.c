@@ -10,32 +10,6 @@
 
 /* Compatibility functions for OpenSSL 1.0.2 */
 
-#ifndef OPENSSL_zalloc
-# ifdef HAVE_CRYPTO_ZALLOC
-#  define OPENSSL_zalloc CRYPTO_zalloc
-# else
-/* Create prototype to silence compiler warning */
-void *OPENSSL_zalloc(size_t size);
-
-void *OPENSSL_zalloc(size_t size)
-{
-    void *ptr = malloc(size);
-    if (ptr == NULL) return NULL;
-
-    memset(ptr, 0, size);
-    return ptr;
-}
-# endif
-#endif
-
-#ifndef OPENSSL_free
-# ifdef HAVE_CRYPTO_FREE
-#   define OPENSSL_free CRYPTO_free
-# else
-#   define OPENSSL_free free
-# endif
-#endif
-
 #ifndef HAVE_EVP_MD_CTX_NEW
 # define EVP_MD_CTX_new EVP_MD_CTX_create
 # define EVP_MD_CTX_free EVP_MD_CTX_destroy
@@ -171,7 +145,6 @@ DIGEST_CTX rpmDigestDup(DIGEST_CTX octx)
 
     DIGEST_CTX nctx = NULL;
     nctx = xcalloc(1, sizeof(*nctx));
-    if (!nctx) return NULL;
 
     nctx->flags = octx->flags;
     nctx->algo = octx->algo;
@@ -230,7 +203,6 @@ size_t rpmDigestLength(int hashalgo)
 DIGEST_CTX rpmDigestInit(int hashalgo, rpmDigestFlags flags)
 {
     DIGEST_CTX ctx = xcalloc(1, sizeof(*ctx));
-    if (!ctx) return NULL;
 
     ctx->md_ctx = EVP_MD_CTX_new();
     if (!ctx->md_ctx) {
@@ -275,7 +247,6 @@ int rpmDigestFinal(DIGEST_CTX ctx, void ** datap, size_t *lenp, int asAscii)
 
     digestlen = EVP_MD_CTX_size(ctx->md_ctx);
     digest = xcalloc(digestlen, sizeof(*digest));
-    if (digest == NULL) return -1;
 
     ret = EVP_DigestFinal_ex(ctx->md_ctx, digest, &digestlen);
     if (ret != 1) goto done;
@@ -371,8 +342,7 @@ static int pgpSetKeyMpiRSA(pgpDigAlg pgpkey, int num, const uint8_t *p)
     struct pgpDigKeyRSA_s *key = pgpkey->data;
 
     if(!key) {
-        key = pgpkey->data = OPENSSL_zalloc(sizeof(*key));
-        if (!key) return 1;
+        key = pgpkey->data = xcalloc(1, sizeof(*key));
     }
 
     switch(num) {
@@ -421,7 +391,7 @@ static void pgpFreeKeyRSA(pgpDigAlg pgpkey)
             BN_clear_free(key->e);
         }
 
-        OPENSSL_free(key);
+        free(key);
     }
 }
 
@@ -441,10 +411,7 @@ static int pgpSetSigMpiRSA(pgpDigAlg pgpsig, int num, const uint8_t *p)
 
     struct pgpDigSigRSA_s *sig = pgpsig->data;
     if (!sig) {
-        sig = OPENSSL_zalloc(sizeof(*sig));
-        if (!sig) {
-            return 1;
-        }
+        sig = xcalloc(1, sizeof(*sig));
     }
 
     switch (num) {
@@ -482,7 +449,7 @@ static void pgpFreeSigRSA(pgpDigAlg pgpsig)
     struct pgpDigSigRSA_s *sig = pgpsig->data;
     if (sig) {
         BN_clear_free(sig->bn);
-        OPENSSL_free(pgpsig->data);
+        free(pgpsig->data);
     }
 }
 
@@ -527,7 +494,7 @@ static int pgpVerifySigRSA(pgpDigAlg pgpkey, pgpDigAlg pgpsig,
     }
 
     int pkey_len = EVP_PKEY_size(key->evp_pkey);
-    padded_sig = OPENSSL_zalloc(pkey_len);
+    padded_sig = xcalloc(1, pkey_len);
     if (!BN_bn2binpad(sig->bn, padded_sig, pkey_len)) {
         rc = 1;
         goto done;
@@ -547,7 +514,7 @@ static int pgpVerifySigRSA(pgpDigAlg pgpkey, pgpDigAlg pgpsig,
 
 done:
     EVP_PKEY_CTX_free(pkey_ctx);
-    OPENSSL_free(padded_sig);
+    free(padded_sig);
     return rc;
 }
 
@@ -603,8 +570,7 @@ static int pgpSetKeyMpiDSA(pgpDigAlg pgpkey, int num, const uint8_t *p)
     struct pgpDigKeyDSA_s *key = pgpkey->data;
 
     if(!key) {
-        key = pgpkey->data = OPENSSL_zalloc(sizeof(*key));
-        if (!key) return 1;
+        key = pgpkey->data = xcalloc(1, sizeof(*key));
     }
 
     /* Create a BIGNUM from the key pointer.
@@ -668,7 +634,7 @@ static void pgpFreeKeyDSA(pgpDigAlg pgpkey)
             BN_clear_free(key->g);
             BN_clear_free(key->y);
         }
-        OPENSSL_free(key);
+        free(key);
     }
 }
 
@@ -718,10 +684,7 @@ static int pgpSetSigMpiDSA(pgpDigAlg pgpsig, int num, const uint8_t *p)
 
     struct pgpDigSigDSA_s *sig = pgpsig->data;
     if (!sig) {
-        sig = OPENSSL_zalloc(sizeof(*sig));
-        if (!sig) {
-            return 1;
-        }
+        sig = xcalloc(1, sizeof(*sig));
     }
 
     /* Create a BIGNUM from the signature pointer.
@@ -770,7 +733,7 @@ static void pgpFreeSigDSA(pgpDigAlg pgpsig)
             BN_clear_free(sig->r);
             BN_clear_free(sig->s);
         }
-        OPENSSL_free(pgpsig->data);
+        free(pgpsig->data);
     }
 }
 

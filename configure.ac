@@ -330,18 +330,6 @@ AC_CHECK_LIB(crypto, EVP_PKEY_CTX_new, [], [
   AC_MSG_ERROR([required OpenSSL library 'libcrypto' missing or too old])
 ])
 
-AC_CHECK_LIB(crypto, CRYPTO_zalloc, [
-    AC_DEFINE(HAVE_CRYPTO_ZALLOC, 1, [Define to 1 if OpenSSL has a zalloc implementation])
-    AC_SUBST(HAVE_CRYPTO_ZALLOC, [1])
-  ], []
-)
-
-AC_CHECK_LIB(crypto, CRYPTO_free, [
-    AC_DEFINE(HAVE_CRYPTO_FREE, 1, [Define to 1 if OpenSSL has a free implementation])
-    AC_SUBST(HAVE_CRYPTO_FREE, [1])
-  ], []
-)
-
 AC_CHECK_LIB(crypto, DSA_set0_key, [
     AC_DEFINE(HAVE_DSA_SET0_KEY, 1, [Define to 1 if OpenSSL has DSA_set0_key])
     AC_SUBST(HAVE_DSA_SET0_KEY, [1])
